@@ -1,6 +1,4 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
-Shader "Custom/HideOutsideOfBox"
+﻿Shader "Custom/HideOutsideOfBox"
 {
     Properties
     {
@@ -12,7 +10,7 @@ Shader "Custom/HideOutsideOfBox"
     }
     SubShader
     {
-        Tags { "RenderType"="Transparent" }
+        Tags { "RenderType"="Transparent" "Queue" = "Transparent" }
         LOD 100
         Blend SrcAlpha OneMinusSrcAlpha
 
@@ -26,9 +24,9 @@ Shader "Custom/HideOutsideOfBox"
 
             half4 _Color;
             float4 _A;
-			float4 _B;
-			sampler2D _MainTex;
-			float4 _MainTex_ST;
+            float4 _B;
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
 
             struct appdata
             {
@@ -38,34 +36,34 @@ Shader "Custom/HideOutsideOfBox"
 
             struct v2f
             {
-                float4 vertex : POSITION;
-				float3 worldPos : TEXCOORD1;
-				float2 uv : TEXCOORD0;
-			};
+                float4 worldPos : TEXCOORD1;
+				float4 vertex : SV_POSITION; // clip space position
+                float2 uv : TEXCOORD0;
+            };
 
-			bool isInsideBox(float3 vertex) {
-				return vertex.x > _A.x && vertex.y > _A.y && vertex.z > _A.z
-					  //&& vertex.x < _B.x && vertex.y < _B.y && vertex.z < _B.z
-					;
-			}
+            bool isInsideBox(float4 vertex) {
+                return vertex.x > _A.x && vertex.y > _A.y && vertex.z > _A.z
+                      && vertex.x < _B.x && vertex.y < _B.y && vertex.z < _B.z
+                    ;
+            }
 
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-				o.worldPos = UnityObjectToViewPos(v.vertex);
+                o.worldPos = v.vertex;
+				o.vertex = UnityObjectToClipPos(v.vertex);
+
                 return o;
             }
 
-			fixed4 frag(v2f i) : SV_Target
-			{
-				half4 texColor = tex2D(_MainTex, i.uv);
-//				if (i.worldPos.x >= 0 && i.worldPos.x <= 1)
-				if (isInsideBox(i.worldPos))
-					return _Color * texColor;
+            fixed4 frag(v2f i) : SV_Target
+            {
+                half4 texColor = tex2D(_MainTex, i.uv);
+                if (isInsideBox(i.worldPos))
+                    return _Color * texColor;
 
-				return half4(0, 0, 0, 0) * texColor;
+                return half4 (0, 0, 0, 0);
             }
 
             ENDCG
