@@ -5,16 +5,22 @@ public class HologramControl : MonoBehaviour {
     public GameObject particle;
     public PeriodicDisplacer displacer;
     public PathTracer pathTracer;
+
     public ParticleSystem airParticles;
+    public AudioSource airParticlesSound;
 
     public const float DefaultScale = 1f;
-    public const float MinScale = 0.5f;
-    public const float MaxScale = 5f;
+    public const float MinScale = 1f;
+    public const float MaxScale = 2f;
 
     public const float DefaultPeriod = 0.1f;
     public const float DefaultSpeed = 1f;
     public const float MinSpeed = 0f;
     public const float MaxSpeed = 8f;
+
+    public const float DefaultPitch = 1;
+    public const float MinPitch = 0;
+    public const float MaxPitch = 3;
 
     AutoLerper scaleLerper = new AutoLerper();
     AutoLerper speedLerper = new AutoLerper();
@@ -25,6 +31,8 @@ public class HologramControl : MonoBehaviour {
     private void Start() {
         emissionRadius = airParticles.shape.radius;
         displacer.Period = DefaultPeriod;
+        pathTracer.MaxDisplacement = displacer.MaxDisplacement;
+        pathTracer.SetScale((currentScale - MinScale) / (MaxScale - MinScale));
     }
 
     public virtual void SetScale(float newScale) {
@@ -45,6 +53,9 @@ public class HologramControl : MonoBehaviour {
         scaleBox.transform.localScale = Vector3.one * currentScale;
         var shape = airParticles.shape;
         shape.radius = emissionRadius / currentScale;
+        var normalizedScale = (currentScale - MinScale) / (MaxScale - MinScale);
+        pathTracer.SetScale(normalizedScale);
+        displacer.Scale = normalizedScale;
     }
 
     void AdjustSpeed(float newSpeed) {
@@ -54,9 +65,17 @@ public class HologramControl : MonoBehaviour {
             ResumeAll();
 
         currentSpeed = Mathf.Clamp(newSpeed, MinSpeed, MaxSpeed);
+
         displacer.Period = DefaultPeriod / currentSpeed;
-        var particleMain = airParticles.main;
-        particleMain.simulationSpeed = currentSpeed;
+
+        AdjustAirParticlesSpeed();
+
+    }
+
+    private void AdjustAirParticlesSpeed() {
+        var airParticlesMain = airParticles.main;
+        airParticlesMain.simulationSpeed = currentSpeed;
+        airParticlesSound.pitch = Mathf.Clamp(currentSpeed, MinPitch, MaxPitch);
     }
 
     private void ResumeAll() {
@@ -78,20 +97,6 @@ public class HologramControl : MonoBehaviour {
             EnableAllSounds(particle.gameObject);
         else
             DisableAllSounds(particle.gameObject);
-    }
-
-    public virtual void SwitchAirParticles() {
-        if (airParticles.isPlaying)
-            HideAirParticles();
-        else
-            ShowAirParticles();
-    }
-
-    public virtual void SwitchTrace() {
-        if (pathTracer.Tracing)
-            StopTracing();
-        else
-            StartTracing();
     }
 
     public virtual void ShowAirParticles() {
@@ -128,5 +133,19 @@ public class HologramControl : MonoBehaviour {
     void DisableAllSounds(GameObject go) {
         foreach (var source in go.GetComponents<AudioSource>())
             source.enabled = false;
+    }
+
+    public void ToggleAirParticles() {
+        if (airParticles.isPlaying)
+            HideAirParticles();
+        else
+            ShowAirParticles();
+    }
+
+    public void ToggleTracing() {
+        if (pathTracer.Tracing)
+            StopTracing();
+        else
+            StartTracing();
     }
 }

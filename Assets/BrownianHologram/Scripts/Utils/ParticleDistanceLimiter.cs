@@ -18,9 +18,19 @@ public class ParticleDistanceLimiter : MonoBehaviour {
         particles = new ParticleSystem.Particle[particleSystem.main.maxParticles];
     }
     private void Update() {
-        HideFarParticles();
+        int count = particleSystem.GetParticles(particles);
+        int remainingCount = KeepNearParticles(count);
+        particleSystem.SetParticles(particles, remainingCount);
     }
 
-    void HideFarParticles() {
+    int KeepNearParticles(int max) {
+        int remainingCount = 0;
+        for (int i = 0 ; i < max ; i++)
+            if (Vector3.Distance(particles[i].position, target.position) < MaxDistance) {
+                particles[remainingCount] = particles[i];
+                remainingCount++;
+            }
+
+        return remainingCount;
     }
 }

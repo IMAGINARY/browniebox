@@ -22,9 +22,9 @@ public class MRHologramControlUI : InteractionReceiver {
 
     protected override void InputDown(GameObject obj, InputEventData eventData) {
         if (obj.name == "Path")
-            hologramControl.SwitchTrace();
+            hologramControl.ToggleTracing();
         else if (obj.name == "AirParticles")
-            hologramControl.SwitchAirParticles();
+            hologramControl.ToggleAirParticles();
     }
 
 }

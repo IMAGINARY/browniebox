@@ -8,8 +8,16 @@ public class PeriodicDisplacer : MonoBehaviour {
 
     public Vector3 CurrentPosition { get { return transform.position;  } }
 
-    public float Period = 0.1f;
-    public float MaxDisplacement = 0.2f;
+    public float Period = 0.025f;
+    public float MaxDisplacement = 0.01f;
+
+    private float scale = 0f;
+    public float Scale {
+        get { return scale; }
+        set { scale = Mathf.Clamp01(value); }
+    }
+
+    public float ScaledDisplacement { get { return MaxDisplacement * (1 + Scale); } }
 
     float timeToNext = 0;
     bool paused = false;
@@ -19,8 +27,12 @@ public class PeriodicDisplacer : MonoBehaviour {
 
     void Awake() {
         timeToNext = Period;
-        lastPosition = transform.localPosition;
-        nextPosition = CreateDisplacement(MaxDisplacement);
+        CalculateNextPosition();
+    }
+
+    private void CalculateNextPosition() {
+        lastPosition = transform.position;
+        nextPosition = lastPosition + CreateDisplacement(ScaledDisplacement);
     }
 
     Vector3 CreateDisplacement(float max) {
@@ -31,8 +43,7 @@ public class PeriodicDisplacer : MonoBehaviour {
         if (PositionReached != null)
             PositionReached(transform.position);
 
-        lastPosition = transform.localPosition;
-        nextPosition += CreateDisplacement(MaxDisplacement);
+        CalculateNextPosition();
     }
 
     public void Unpause() {
@@ -59,7 +70,7 @@ public class PeriodicDisplacer : MonoBehaviour {
         if (ShouldCreateNewPosition(Time.deltaTime))
             CreateNewPosition();
 
-        transform.localPosition = Vector3.Lerp(lastPosition, nextPosition, (Period - timeToNext) / Period);
+        transform.position = Vector3.Lerp(lastPosition, nextPosition, (Period - timeToNext) / Period);
     }
 }
 
